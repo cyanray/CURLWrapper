@@ -13,7 +13,6 @@ macro(api_exe target)
             ${target}.cpp
             )
     target_link_libraries(${PROJECT_NAME}-${target} CURLWrapper)
-    target_link_libraries(${PROJECT_NAME}-${target} CURL::libcurl)
 endmacro()
 
 api_exe(GetMethod)

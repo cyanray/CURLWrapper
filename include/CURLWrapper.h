@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <string>
 #include <map>
 #include <regex>
@@ -39,7 +39,7 @@ namespace Cyan
 				{
 					return it->second;
 				}
-				throw "Î´ÕÒµ½Key¶ÔÓ¦µÄCookie";
+				throw "æœªæ‰¾åˆ°Keyå¯¹åº”çš„Cookie";
 			}
 		private:
 			CookieContainer* cc;
@@ -58,7 +58,11 @@ namespace Cyan
 			std::regex pattern(R"(([^=]+)=([^;]+);?\s*)");
 			while (std::regex_search(cookies, match, pattern))
 			{
-				map<string, string>::insert(std::make_pair(match[1].str(), match[2].str()));
+				string key = match[1].str();
+				string val = match[2].str();
+				trim(key);
+				trim(val);
+				map<string, string>::insert(std::make_pair(key, val));
 				cookies = match.suffix().str();
 			}
 		}
@@ -93,6 +97,16 @@ namespace Cyan
 			}
 		}
 		virtual ~CookieContainer() {}
+	private:
+		void trim(string& s)
+		{
+			if (s.empty())
+			{
+				return;
+			}
+			s.erase(0, s.find_first_not_of(" "));
+			s.erase(s.find_last_not_of(" ") + 1);
+		}
 	}; // class CookieContainer
 	std::ostream& operator <<(std::ostream& os, const CookieContainer::CookieValue& v)
 	{
@@ -111,15 +125,15 @@ namespace Cyan
 		};
 		const string DefaultContentType = "application/x-www-form-urlencoded";
 		const string DefaultAccept = "*/*";
-		const string DefaultUserAgent = 
+		const string DefaultUserAgent =
 			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
 			"AppleWebKit/537.36 (KHTML, like Gecko) "
 			"Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134";
-		HTTP():
+		HTTP() :
 			curl(nullptr),
 			slist(nullptr),
 			followRedirect(true),
-			timeout(120), 
+			timeout(120),
 			maxRedirs(5),
 			cookieContainer(),
 			contentType(DefaultContentType),
@@ -176,7 +190,7 @@ namespace Cyan
 
 		string URLEncode(const string& str)
 		{
-			auto encoded = curl_easy_escape(curl, str.data(), str.size());	// TODO:´íÎó´¦Àí
+			auto encoded = curl_easy_escape(curl, str.data(), str.size());	// TODO:é”™è¯¯å¤„ç†
 			return string(encoded);
 		}
 
@@ -188,8 +202,8 @@ namespace Cyan
 				curl = curl_easy_init();
 			}
 
-			// ³õÊ¼»¯CURLÊ§°Ü£¬»ñµÃ´íÎóÃèÊö¡¢ÇåÀíCURL¡¢·µ»Ø
-			if (!curl)								
+			// åˆå§‹åŒ–CURLå¤±è´¥ï¼ŒèŽ·å¾—é”™è¯¯æè¿°ã€æ¸…ç†CURLã€è¿”å›ž
+			if (!curl)
 			{
 				resp.Ready = false;
 				resp.ErrorMsg = GetErrorStr();
@@ -217,7 +231,7 @@ namespace Cyan
 			}
 
 			CURLCleanup();
-			return resp; 
+			return resp;
 		}
 
 		const Response Post(const string& URL, const string& Data)
@@ -228,7 +242,7 @@ namespace Cyan
 				curl = curl_easy_init();
 			}
 
-			// ³õÊ¼»¯CURLÊ§°Ü£¬»ñµÃ´íÎóÃèÊö¡¢ÇåÀíCURL¡¢·µ»Ø
+			// åˆå§‹åŒ–CURLå¤±è´¥ï¼ŒèŽ·å¾—é”™è¯¯æè¿°ã€æ¸…ç†CURLã€è¿”å›ž
 			if (!curl)
 			{
 				resp.Ready = false;
@@ -239,7 +253,8 @@ namespace Cyan
 				return resp;
 			}
 
-			// PostÖ»ÊÇÔÚGetµÄ»ù´¡ÉÏÔö¼ÓÁ½ÏîÉèÖÃ
+			// Poståªæ˜¯åœ¨Getçš„åŸºç¡€ä¸Šå¢žåŠ å‡ é¡¹è®¾ç½®
+			slist = curl_slist_append(slist, ("Content-Type: " + contentType).data());
 			curl_easy_setopt(curl, CURLOPT_POST, 1L);
 			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, Data.data());
 
@@ -263,7 +278,7 @@ namespace Cyan
 			CURLCleanup();
 			return resp;
 		}
-		
+
 		~HTTP()
 		{
 			curl_slist_free_all(slist);
@@ -317,13 +332,27 @@ namespace Cyan
 			return sizes;
 		}
 
+		void trim(string& s)
+		{
+			if (s.empty())
+			{
+				return;
+			}
+			s.erase(0, s.find_first_not_of(" "));
+			s.erase(s.find_last_not_of(" ") + 1);
+		}
+
 		void AutoCookies(string& reHeader)
 		{
 			std::smatch match;
 			std::regex pattern(R"(Set-Cookie:([^=]+)=([^;]+);?\s*)");
 			while (std::regex_search(reHeader, match, pattern))
 			{
-				cookieContainer.insert(std::make_pair(match[1].str(), match[2].str()));
+				string key = match[1].str();
+				string val = match[2].str();
+				trim(key);
+				trim(val);
+				cookieContainer.insert(std::make_pair(key, val));
 				reHeader = match.suffix().str();
 			}
 		}
@@ -332,11 +361,10 @@ namespace Cyan
 		{
 			string reStr;
 			string reHeader;
-			// ×Ô¶¨ÒåHTTPÍ·
+			// è‡ªå®šä¹‰HTTPå¤´
 			slist = curl_slist_append(slist, ("User-Agent: " + userAgent).data());
 			slist = curl_slist_append(slist, ("Accept: " + accept).data());
-			slist = curl_slist_append(slist, ("ContentType: " + contentType).data());
-			// curl»ù´¡ÉèÖÃ
+			// curlåŸºç¡€è®¾ç½®
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
 			curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
 			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, followRedirect);
@@ -345,19 +373,26 @@ namespace Cyan
 			curl_easy_setopt(curl, CURLOPT_COOKIE, cookieContainer.toString().data());
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
-			// ÉèÖÃ´¦Àí·µ»ØÄÚÈÝµÄ¹¦ÄÜº¯Êý
+			/* enable TCP keep-alive for this transfer */
+			curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+			/* keep-alive idle time to 120 seconds */
+			curl_easy_setopt(curl, CURLOPT_TCP_KEEPIDLE, 120L);
+			/* interval time between keep-alive probes: 60 seconds */
+			curl_easy_setopt(curl, CURLOPT_TCP_KEEPINTVL, 60L);
+			// curl æ•°æ®å¤„ç†å‡½æ•°
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, reWriter);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&reStr);
-			// ÉèÖÃ´¦ÀíHTTPÍ·²¿µÄ¹¦ÄÜº¯Êý
+			// è®¾ç½®å¤„ç†HTTPå¤´éƒ¨çš„åŠŸèƒ½å‡½æ•°
 			curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, heWriter);
 			curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)&reHeader);
 			curl_easy_setopt(curl, CURLOPT_URL, URL.data());
 			curlCode = curl_easy_perform(curl);
-			// ´ÓHTTPÍ·²¿¶ÁÈ¡ÐÂµÄCookie²¢¼ÓÈëµ½CookieContainerÖÐ
+			// ä»ŽHTTPå¤´éƒ¨è¯»å–æ–°çš„Cookieå¹¶åŠ å…¥åˆ°CookieContainerä¸­
 			AutoCookies(reHeader);
 
 			return reStr;
 		}
+
 
 	};
 }// namespace Cyan
