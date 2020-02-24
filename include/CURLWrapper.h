@@ -188,6 +188,26 @@ namespace Cyan
 			return cookieContainer;
 		}
 
+		HTTP& AddPostData(const string& name, const string& data)
+		{
+			if (form == nullptr)
+				form = curl_mime_init(curl);
+			field = curl_mime_addpart(form);
+			curl_mime_name(field, name.data());
+			curl_mime_data(field, data.data(), CURL_ZERO_TERMINATED);
+			return *this;
+		}
+
+		HTTP& AddFile(const string& name, const string& fileName)
+		{
+			if (form == nullptr)
+				form = curl_mime_init(curl);
+			field = curl_mime_addpart(form);
+			curl_mime_name(field, name.data());
+			curl_mime_filedata(field, fileName.data());
+			return *this;
+		}
+
 		string URLEncode(const string& str)
 		{
 			auto encoded = curl_easy_escape(curl, str.data(), str.size());	// TODO:错误处理
@@ -254,9 +274,56 @@ namespace Cyan
 			}
 
 			// Post只是在Get的基础上增加几项设置
-			slist = curl_slist_append(slist, ("Content-Type: " + contentType).data());
+			if (!contentType.empty())
+				slist = curl_slist_append(slist, ("Content-Type: " + contentType).data());
 			curl_easy_setopt(curl, CURLOPT_POST, 1L);
 			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, Data.data());
+
+			string tStr = execute(URL);
+
+			if (curlCode == CURLcode::CURLE_OK)
+			{
+				resp.Ready = true;
+				resp.CURLCode = curlCode;
+				resp.ErrorMsg = "";
+				resp.Content = tStr;
+			}
+			else
+			{
+				resp.Ready = false;
+				resp.ErrorMsg = GetErrorStr();
+				resp.CURLCode = curlCode;
+				resp.Content = "";
+			}
+
+			CURLCleanup();
+			return resp;
+		}
+
+		const Response Post(const string& URL)
+		{
+			Response resp;
+			if (curl == NULL)
+			{
+				curl = curl_easy_init();
+			}
+
+			// 初始化CURL失败，获得错误描述、清理CURL、返回
+			if (!curl)
+			{
+				resp.Ready = false;
+				resp.ErrorMsg = GetErrorStr();
+				resp.CURLCode = curlCode;
+				resp.Content = "";
+				CURLCleanup();
+				return resp;
+			}
+
+			// Post只是在Get的基础上增加几项设置
+			if (!contentType.empty())
+				slist = curl_slist_append(slist, ("Content-Type: " + contentType).data());
+			curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+			curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
 
 			string tStr = execute(URL);
 
@@ -290,6 +357,8 @@ namespace Cyan
 		CURLcode curlCode;
 		char errbuf[CURL_ERROR_SIZE];
 		struct curl_slist* slist;
+		curl_mime* form = nullptr;
+		curl_mimepart* field = nullptr;
 
 		bool followRedirect;
 		size_t timeout;
@@ -316,6 +385,8 @@ namespace Cyan
 			curl = nullptr;
 			curl_slist_free_all(slist);
 			slist = nullptr;
+			curl_mime_free(form);
+			form = nullptr;
 		}
 
 		static size_t reWriter(char* buffer, size_t size, size_t nmemb, string* content)
