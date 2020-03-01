@@ -7,7 +7,7 @@ int main()
 {
 	using namespace std;
 	using namespace Cyan;
-
+	HTTP::InitGlobal();
 	HTTP http;
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -21,6 +21,8 @@ int main()
 			cout << resp.ErrorMsg << endl;
 		}
 	}
+	HTTP::ReleaseGlobal();
+	return 0;
 }
 
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
