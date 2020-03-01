@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 #include <map>
 #include <regex>
@@ -45,9 +45,10 @@ namespace Cyan
 			CookieContainer* cc;
 			string CookieKey;
 			CookieValue(CookieContainer* value, const string& key) :cc(value), CookieKey(key) {}
+			~CookieValue() = default;
 		}; // class CookieValue
 
-		CookieContainer() {}
+		CookieContainer() = default;
 		CookieContainer(const string& cookies)
 		{
 			parse(cookies);
