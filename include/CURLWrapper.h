@@ -109,7 +109,7 @@ namespace Cyan
 			s.erase(s.find_last_not_of(" ") + 1);
 		}
 	}; // class CookieContainer
-	static std::ostream& operator <<(std::ostream& os, const CookieContainer::CookieValue& v)
+	inline std::ostream& operator <<(std::ostream& os, const CookieContainer::CookieValue& v)
 	{
 		os << static_cast<string>(v);
 		return os;
