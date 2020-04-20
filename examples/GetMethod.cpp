@@ -12,8 +12,9 @@ int main()
 	for (size_t i = 0; i < 3; i++)
 	{
 		auto resp = http.Get("http://baidu.com");
-		if (resp.Ready)
+		if ( resp.Ready)
 		{
+			cout << resp.StatusCode << endl;
 			cout << resp.Content << endl;
 		}
 		else
