@@ -11,7 +11,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE include)
 target_link_libraries(${PROJECT_NAME} INTERFACE CURL::libcurl)
 
-option(CURLWrapper_BUILD_SAMPLES "Build examples" ON)
+option(CURLWrapper_BUILD_SAMPLES "Build examples" OFF)
 if(CURLWrapper_BUILD_SAMPLES)
     add_subdirectory(examples)
 endif()
